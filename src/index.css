@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 html,
@@ -14,26 +14,55 @@ body,
 
 body {
   margin: 0;
-  background-color: #f4f6f4;
-  color: #1a2b22;
+  /* Warm dark page background (deep espresso brown). */
+  background-color: #1c1714;
+  color: #fbf5ec;
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
     Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Visible focus ring for keyboard users across the app */
+/* Visible focus ring for keyboard users (warm amber on dark). */
 *:focus-visible {
-  outline: 3px solid #1f7a43;
+  outline: 3px solid #f0a93a;
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* Leaflet needs an explicit height */
+/*
+ * The app uses `ring-1 ring-black/5` on cards for a subtle edge. On a dark
+ * theme a black ring is invisible, so retint the default ring color to a
+ * warm translucent light. This keeps card separation visible.
+ */
+*,
+*::before,
+*::after {
+  --tw-ring-color: rgba(255, 240, 220, 0.08);
+}
+
+/* Form controls inherit the warm dark scheme. */
+input,
+select,
+textarea {
+  color-scheme: dark;
+}
+
+/* Leaflet needs an explicit height; warm dark placeholder while tiles load. */
 .leaflet-container {
   height: 100%;
   width: 100%;
-  background: #e8ece8;
+  background: #2a2320;
   font-family: inherit;
+}
+
+/* Leaflet popups retinted to match the warm dark cards. */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #2a2320;
+  color: #fbf5ec;
+}
+.leaflet-popup-content a {
+  color: #f5c56b;
 }
 
 /* Screen-reader-only utility */
@@ -49,13 +78,24 @@ body {
   border: 0;
 }
 
-/* Print styles for the "Save as PDF" report page */
+/*
+ * Print styles for "Save as PDF". Force the printable report back to a
+ * light, high-contrast scheme so printed/exported pages stay readable on
+ * white paper, regardless of the dark on-screen theme.
+ */
 @media print {
   .no-print {
     display: none !important;
   }
   body {
     background: #ffffff;
+    color: #111111;
+  }
+  .print-page,
+  .print-page * {
+    background: #ffffff !important;
+    color: #111111 !important;
+    border-color: #cccccc !important;
   }
   .print-page {
     box-shadow: none !important;
