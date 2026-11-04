@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #f4f6f4;
+  color: #1a2b22;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Visible focus ring for keyboard users across the app */
+*:focus-visible {
+  outline: 3px solid #1f7a43;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Leaflet needs an explicit height */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #e8ece8;
+  font-family: inherit;
+}
+
+/* Screen-reader-only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Print styles for the "Save as PDF" report page */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #ffffff;
+  }
+  .print-page {
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .print-break {
+    page-break-inside: avoid;
+  }
+}
