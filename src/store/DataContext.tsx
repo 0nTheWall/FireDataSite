@@ -81,56 +81,72 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // Initial load.
+  // NOTE: guarded by a ref so React 18 StrictMode's double-invoke in dev runs
+  // this once. We intentionally do NOT abort on unmount before committing
+  // state — doing so (combined with the ref guard) would leave the app stuck
+  // on the loading screen. Any failure still clears `loading` via try/catch so
+  // the app never hangs.
   useEffect(() => {
     if (didInit.current) return
     didInit.current = true
 
-    let cancelled = false
     ;(async () => {
-      const [incidents, assessments, seeded, savedSelected] = await Promise.all([
-        db.getAllIncidents(),
-        db.getAllAssessments(),
-        db.getMeta<boolean>(SEEDED_KEY),
-        db.getMeta<string>(SELECTED_KEY),
-      ])
+      try {
+        const [incidents, assessments, seeded, savedSelected] = await Promise.all([
+          db.getAllIncidents(),
+          db.getAllAssessments(),
+          db.getMeta<boolean>(SEEDED_KEY),
+          db.getMeta<string>(SELECTED_KEY),
+        ])
 
-      let allIncidents = incidents
-      let allAssessments = assessments
+        let allIncidents = incidents
+        let allAssessments = assessments
 
-      // Seed demo data once.
-      if (!seeded) {
-        const demoAssessments = buildDemoAssessments()
-        await db.putIncident(demoIncident)
-        await db.putAssessments(demoAssessments)
-        await db.setMeta(SEEDED_KEY, true)
-        // Avoid duplicating if somehow present.
-        if (!allIncidents.find((i) => i.id === demoIncident.id)) {
-          allIncidents = [...allIncidents, demoIncident]
+        // Seed demo data once.
+        if (!seeded) {
+          const demoAssessments = buildDemoAssessments()
+          await db.putIncident(demoIncident)
+          await db.putAssessments(demoAssessments)
+          await db.setMeta(SEEDED_KEY, true)
+          // Avoid duplicating if somehow present.
+          if (!allIncidents.find((i) => i.id === demoIncident.id)) {
+            allIncidents = [...allIncidents, demoIncident]
+          }
+          allAssessments = [...allAssessments, ...demoAssessments]
         }
-        allAssessments = [...allAssessments, ...demoAssessments]
+
+        const selected =
+          savedSelected && allIncidents.find((i) => i.id === savedSelected)
+            ? savedSelected
+            : allIncidents.find((i) => i.id === DEMO_INCIDENT_ID)
+              ? DEMO_INCIDENT_ID
+              : (allIncidents[0]?.id ?? null)
+
+        setState((s) => ({
+          ...s,
+          loading: false,
+          incidents: allIncidents,
+          assessments: allAssessments,
+          selectedIncidentId: selected,
+        }))
+      } catch (err) {
+        // IndexedDB unavailable (e.g. private mode) or seeding failed.
+        // Fall back to in-memory demo data so the app still works.
+        // eslint-disable-next-line no-console
+        console.error('AfterFire init failed, using in-memory demo data:', err)
+        const demoAssessments = buildDemoAssessments()
+        setState((s) => ({
+          ...s,
+          loading: false,
+          incidents: [demoIncident],
+          assessments: demoAssessments,
+          selectedIncidentId: DEMO_INCIDENT_ID,
+        }))
       }
-
-      const selected =
-        savedSelected && allIncidents.find((i) => i.id === savedSelected)
-          ? savedSelected
-          : DEMO_INCIDENT_ID
-
-      if (cancelled) return
-      setState((s) => ({
-        ...s,
-        loading: false,
-        incidents: allIncidents,
-        assessments: allAssessments,
-        selectedIncidentId: selected,
-      }))
 
       // Best-effort DNR fetch after initial render.
       void refreshDnrInternal()
     })()
-
-    return () => {
-      cancelled = true
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
